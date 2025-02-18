@@ -20,8 +20,12 @@ def get_roe_history(ticker):
     response = requests.get(url)
     if response.status_code == 200:
         data = response.json()
+        st.write(f"✅ {ticker} ROE Data Sample:", data)  # Print ALL ROE data for this stock
         return {entry['date']: round(entry['returnOnEquity'], 2) for entry in data[:10]}  # Last 10 years
-    return {}
+    else:
+        st.error(f"❌ Error fetching ROE for {ticker}: {response.text}")
+        return {}
+
 
 # Streamlit UI
 st.title("📈 High ROE Stock Screener")
