@@ -11,8 +11,13 @@ def get_sp500_companies():
     url = f"https://financialmodelingprep.com/api/v3/sp500_constituent?apikey={API_KEY}"
     response = requests.get(url)
     if response.status_code == 200:
-        return response.json()
-    return []
+        data = response.json()
+        st.write("✅ Fetched S&P 500 companies:", data[:5])  # Print first 5 companies
+        return data
+    else:
+        st.error(f"❌ Error fetching S&P 500 data: {response.text}")
+        return []
+
 
 # Function to get ROE data for a company
 def get_roe_history(ticker):
@@ -20,8 +25,12 @@ def get_roe_history(ticker):
     response = requests.get(url)
     if response.status_code == 200:
         data = response.json()
-        return {entry['date']: round(entry['returnOnEquity'], 2) for entry in data[:10]}  # Last 10 years
-    return {}
+        st.write(f"✅ {ticker} ROE Data:", data[:5])  # Print first 5 ROE entries
+        return {entry['date']: round(entry['returnOnEquity'], 2) for entry in data[:10]}
+    else:
+        st.error(f"❌ Error fetching ROE for {ticker}: {response.text}")
+        return {}
+
 
 # Streamlit UI
 st.title("📈 High ROE Stock Screener")
