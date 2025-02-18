@@ -16,22 +16,24 @@ def get_sp500_companies():
 
 # Function to get ROE data for a company
 def get_roe_history(ticker):
-    url = f"https://financialmodelingprep.com/api/v3/ratios/{ticker}?apikey={API_KEY}"
+    url = f"https://financialmodelingprep.com/api/v3/key-metrics/{ticker}?apikey={API_KEY}"
     response = requests.get(url)
     if response.status_code == 200:
         data = response.json()
-        
-        # Print the full API response for debugging
-        st.write(f"🔍 {ticker} Full ROE API Response:", data)
-        
+
+        # Debug print full response to check for ROE
+        st.write(f"🔍 {ticker} Full Key Metrics API Response:", data)
+
+        # Extract ROE values if available
         if isinstance(data, list) and len(data) > 0:
-            return {entry['date']: round(entry['returnOnEquity'], 2) for entry in data[:10]}  # Last 10 years
+            return {entry['date']: round(entry.get('returnOnEquity', 0) * 100, 2) for entry in data[:10]}  # Convert to percentage
         else:
             st.warning(f"⚠️ No ROE data found for {ticker}.")
             return {}
     else:
         st.error(f"❌ Error fetching ROE for {ticker}: {response.text}")
         return {}
+
 
 
 
