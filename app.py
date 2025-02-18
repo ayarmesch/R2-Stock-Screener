@@ -11,8 +11,12 @@ def get_sp500_companies():
     url = f"https://financialmodelingprep.com/api/v3/sp500_constituent?apikey={API_KEY}"
     response = requests.get(url)
     if response.status_code == 200:
-        return response.json()
-    return []
+        data = response.json()
+        st.write("✅ S&P 500 Companies Sample:", data[:5])  # Debug print first 5 companies
+        return data
+    else:
+        st.error(f"❌ Error fetching S&P 500 data: {response.text}")
+        return []
 
 # Function to get ROE data for a company
 def get_roe_history(ticker):
@@ -20,11 +24,7 @@ def get_roe_history(ticker):
     response = requests.get(url)
     if response.status_code == 200:
         data = response.json()
-
-        # Debug print full response to check for ROE
-        st.write(f"🔍 {ticker} Full Key Metrics API Response:", data)
-
-        # Extract ROE values if available
+        st.write(f"✅ {ticker} Full Key Metrics API Response:", data)  # Debug print full response
         if isinstance(data, list) and len(data) > 0:
             return {entry['date']: round(entry.get('returnOnEquity', 0) * 100, 2) for entry in data[:10]}  # Convert to percentage
         else:
@@ -34,9 +34,6 @@ def get_roe_history(ticker):
         st.error(f"❌ Error fetching ROE for {ticker}: {response.text}")
         return {}
 
-
-
-
 # Streamlit UI
 st.title("📈 High ROE Stock Screener")
 st.write("Filtering S&P 500 stocks with **ROE > 15%** over the last 10 years.")
@@ -45,17 +42,16 @@ st.write("Filtering S&P 500 stocks with **ROE > 15%** over the last 10 years.")
 sp500_companies = get_sp500_companies()
 filtered_stocks = []
 
-# Screen for stocks with ROE > 15% for all 10 years
+# Screen for stocks with at least 5 years of ROE > 15%
 for company in sp500_companies:
     ticker = company['symbol']
     roe_history = get_roe_history(ticker)
-
-    # Instead of requiring 10 years > 15%, require at least 5 years > 15%
+    
+    # Require at least 5 years > 15%
     if roe_history and sum(roe > 15 for roe in roe_history.values()) >= 5:
         filtered_stocks.append({"Ticker": ticker, "Company": company['name'], **roe_history})
 
 st.write(f"✅ Total Filtered Stocks: {len(filtered_stocks)}")  # Debug print
-
 
 # Convert to DataFrame
 df = pd.DataFrame(filtered_stocks)
@@ -69,4 +65,5 @@ csv = df.to_csv(index=False).encode('utf-8')
 st.download_button("Download CSV", csv, "high_roe_stocks.csv", "text/csv")
 
 st.write("✅ Data sourced from Financial Modeling Prep API.")
+
 
