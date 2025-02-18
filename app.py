@@ -35,8 +35,13 @@ filtered_stocks = []
 for company in sp500_companies:
     ticker = company['symbol']
     roe_history = get_roe_history(ticker)
-    if roe_history and all(roe > 15 for roe in roe_history.values()):
+
+    # Instead of requiring 10 years > 15%, require at least 5 years > 15%
+    if roe_history and sum(roe > 15 for roe in roe_history.values()) >= 5:
         filtered_stocks.append({"Ticker": ticker, "Company": company['name'], **roe_history})
+
+st.write(f"✅ Total Filtered Stocks: {len(filtered_stocks)}")  # Debug print
+
 
 # Convert to DataFrame
 df = pd.DataFrame(filtered_stocks)
