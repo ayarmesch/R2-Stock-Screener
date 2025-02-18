@@ -46,24 +46,33 @@ if option == "Stock Screener":
 
 elif option == "Industry Leaders":
     st.write("### 🏆 Industry Leaders")
-    uploaded_file = st.file_uploader("Upload Industry Leaders Excel File", type=["xlsx"])
     
-    if uploaded_file:
-        industry_df = pd.read_excel(uploaded_file)
+    # Initialize or load industry leaders dataset
+    if 'industry_leaders' not in st.session_state:
+        st.session_state.industry_leaders = pd.DataFrame(columns=["Symbol", "Company Name", "Sector", "Price", "Market Cap", "P/E Ratio"])
+    
+    # Input form to add a new stock
+    with st.form("add_stock"):
+        symbol = st.text_input("Stock Symbol:")
+        company_name = st.text_input("Company Name:")
+        sector = st.text_input("Sector:")
+        submitted = st.form_submit_button("Add Stock")
         
-        # Update data using API
-        for index, row in industry_df.iterrows():
-            ticker = row['Symbol']
-            stock_data = fetch_stock_data(ticker)
-            if stock_data:
-                industry_df.at[index, 'Price'] = stock_data.get('price', 'N/A')
-                industry_df.at[index, 'Market Cap'] = stock_data.get('mktCap', 'N/A')
-                industry_df.at[index, 'P/E Ratio'] = stock_data.get('pe', 'N/A')
-
-        st.dataframe(industry_df)
-        csv = industry_df.to_csv(index=False).encode('utf-8')
-        st.download_button("Download Updated CSV", csv, "industry_leaders.csv", "text/csv")
-        st.write("✅ Data updated from Financial Modeling Prep API.")
-    else:
-        st.warning("⚠️ Please upload the Excel file to proceed.")
+        if submitted and symbol:
+            stock_data = fetch_stock_data(symbol)
+            new_row = {
+                "Symbol": symbol,
+                "Company Name": company_name,
+                "Sector": sector,
+                "Price": stock_data.get('price', 'N/A'),
+                "Market Cap": stock_data.get('mktCap', 'N/A'),
+                "P/E Ratio": stock_data.get('pe', 'N/A')
+            }
+            st.session_state.industry_leaders = pd.concat([st.session_state.industry_leaders, pd.DataFrame([new_row])], ignore_index=True)
+    
+    # Display and update data
+    st.dataframe(st.session_state.industry_leaders)
+    csv = st.session_state.industry_leaders.to_csv(index=False).encode('utf-8')
+    st.download_button("Download Updated CSV", csv, "industry_leaders.csv", "text/csv")
+    st.write("✅ Data updated from Financial Modeling Prep API.")
 
