@@ -4,7 +4,7 @@ import pandas as pd
 import os
 
 # Set API Key (store securely in an .env file in production)
-API_KEY = os.getenv("API_KEY")  # Ensure API key is stored securely
+API_KEY = os.getenv("YPdL1uAS7P5Pr7TLb64e5cho0L4tFZrS")  # Ensure API key is stored securely
 
 # Function to get S&P 500 company data
 def get_sp500_companies():
