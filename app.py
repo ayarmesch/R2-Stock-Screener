@@ -15,27 +15,58 @@ def get_sample_stocks():
         {"symbol": "PG", "name": "Procter & Gamble", "sector": "Consumer Goods", "roe": 20.2},
     ]
 
+# Function to fetch stock financial data from API
+def fetch_stock_data(ticker):
+    url = f"https://financialmodelingprep.com/api/v3/profile/{ticker}?apikey={API_KEY}"
+    response = requests.get(url)
+    if response.status_code == 200:
+        data = response.json()
+        if isinstance(data, list) and len(data) > 0:
+            return data[0]
+    return {}
+
+# Function to update the Industry Leaders spreadsheet
+def update_industry_leaders():
+    file_path = "R2 Industry Leaders.xlsx"
+    try:
+        df = pd.read_excel(file_path)
+        for index, row in df.iterrows():
+            ticker = row['Symbol']
+            stock_data = fetch_stock_data(ticker)
+            if stock_data:
+                df.at[index, 'Price'] = stock_data.get('price', 'N/A')
+                df.at[index, 'Market Cap'] = stock_data.get('mktCap', 'N/A')
+                df.at[index, 'P/E Ratio'] = stock_data.get('pe', 'N/A')
+        return df
+    except Exception as e:
+        st.error(f"Error loading spreadsheet: {e}")
+        return pd.DataFrame()
+
 # Streamlit UI
-st.title("📈 Simple Stock Screener")
-st.write("Filtering sample stocks with **ROE > 15%**.")
+st.title("📈 Stock Screener & Industry Leaders")
 
-# Fetch Sample Stocks
-stocks = get_sample_stocks()
-filtered_stocks = [stock for stock in stocks if stock['roe'] > 15]
+# Sidebar Navigation
+st.sidebar.title("🔍 Choose a Tool")
+option = st.sidebar.radio("Select a Feature:", ["Stock Screener", "Industry Leaders"])
 
-st.write(f"✅ Total Filtered Stocks: {len(filtered_stocks)}")  # Debug print
+if option == "Stock Screener":
+    st.write("Filtering sample stocks with **ROE > 15%**.")
+    stocks = get_sample_stocks()
+    filtered_stocks = [stock for stock in stocks if stock['roe'] > 15]
+    df = pd.DataFrame(filtered_stocks)
+    st.write(f"✅ Total Filtered Stocks: {len(filtered_stocks)}")
+    st.write("### 📊 Filtered Stocks")
+    st.dataframe(df)
+    csv = df.to_csv(index=False).encode('utf-8')
+    st.download_button("Download CSV", csv, "filtered_stocks.csv", "text/csv")
+    st.write("✅ Sample data used for testing.")
 
-# Convert to DataFrame
-df = pd.DataFrame(filtered_stocks)
-
-# Display table in Streamlit
-st.write("### 📊 Filtered Stocks")
-st.dataframe(df)
-
-# Allow CSV Download
-csv = df.to_csv(index=False).encode('utf-8')
-st.download_button("Download CSV", csv, "filtered_stocks.csv", "text/csv")
-
-st.write("✅ Sample data used for testing.")
+elif option == "Industry Leaders":
+    st.write("### 🏆 Industry Leaders")
+    industry_df = update_industry_leaders()
+    st.dataframe(industry_df)
+    csv = industry_df.to_csv(index=False).encode('utf-8')
+    st.download_button("Download Updated CSV", csv, "industry_leaders.csv", "text/csv")
+    st.write("✅ Data updated from Financial Modeling Prep API.")
 
 
