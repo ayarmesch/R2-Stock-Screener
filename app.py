@@ -25,23 +25,6 @@ def fetch_stock_data(ticker):
             return data[0]
     return {}
 
-# Function to update the Industry Leaders spreadsheet
-def update_industry_leaders():
-    file_path = "R2 Industry Leaders.xlsx"
-    try:
-        df = pd.read_excel(file_path)
-        for index, row in df.iterrows():
-            ticker = row['Symbol']
-            stock_data = fetch_stock_data(ticker)
-            if stock_data:
-                df.at[index, 'Price'] = stock_data.get('price', 'N/A')
-                df.at[index, 'Market Cap'] = stock_data.get('mktCap', 'N/A')
-                df.at[index, 'P/E Ratio'] = stock_data.get('pe', 'N/A')
-        return df
-    except Exception as e:
-        st.error(f"Error loading spreadsheet: {e}")
-        return pd.DataFrame()
-
 # Streamlit UI
 st.title("📈 Stock Screener & Industry Leaders")
 
@@ -63,10 +46,24 @@ if option == "Stock Screener":
 
 elif option == "Industry Leaders":
     st.write("### 🏆 Industry Leaders")
-    industry_df = update_industry_leaders()
-    st.dataframe(industry_df)
-    csv = industry_df.to_csv(index=False).encode('utf-8')
-    st.download_button("Download Updated CSV", csv, "industry_leaders.csv", "text/csv")
-    st.write("✅ Data updated from Financial Modeling Prep API.")
+    uploaded_file = st.file_uploader("Upload Industry Leaders Excel File", type=["xlsx"])
+    
+    if uploaded_file:
+        industry_df = pd.read_excel(uploaded_file)
+        
+        # Update data using API
+        for index, row in industry_df.iterrows():
+            ticker = row['Symbol']
+            stock_data = fetch_stock_data(ticker)
+            if stock_data:
+                industry_df.at[index, 'Price'] = stock_data.get('price', 'N/A')
+                industry_df.at[index, 'Market Cap'] = stock_data.get('mktCap', 'N/A')
+                industry_df.at[index, 'P/E Ratio'] = stock_data.get('pe', 'N/A')
 
+        st.dataframe(industry_df)
+        csv = industry_df.to_csv(index=False).encode('utf-8')
+        st.download_button("Download Updated CSV", csv, "industry_leaders.csv", "text/csv")
+        st.write("✅ Data updated from Financial Modeling Prep API.")
+    else:
+        st.warning("⚠️ Please upload the Excel file to proceed.")
 
